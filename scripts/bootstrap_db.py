@@ -25,6 +25,8 @@ def bootstrap(db_path: Path) -> None:
     with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cur = conn.cursor()
+        cur.execute("DROP TABLE IF EXISTS employees")
+        cur.execute("DROP TABLE IF EXISTS departments")
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS departments (
@@ -48,8 +50,6 @@ def bootstrap(db_path: Path) -> None:
             )
             """
         )
-        cur.execute("DELETE FROM employees")
-        cur.execute("DELETE FROM departments")
         cur.executemany(
             "INSERT INTO departments (id, name, division) VALUES (?, ?, ?)",
             DEPARTMENTS,
