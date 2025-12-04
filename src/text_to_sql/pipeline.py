@@ -52,7 +52,8 @@ class NL2SQLPipeline:
                 result = executor.execute(cleaned)
                 return PipelineOutput(sql=pretty_format(cleaned), result=result)
             except Exception as exc:
-                console.print(f"[yellow]Execution failure for candidate SQL:[/yellow] {exc}")
+                if self.config.verbose:
+                    console.print(f"[yellow]Execution failure for candidate SQL:[/yellow] {exc}")
                 continue
         # if none succeeded, surface first error
         fallback_sql = self.heuristic.translate(question, schema)

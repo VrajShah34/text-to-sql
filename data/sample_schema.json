@@ -2,47 +2,163 @@
   "databases": [
     {
       "name": "company",
-      "path": "data/sample.db",
+      "path": "data/company.db",
       "tables": [
         {
           "name": "employees",
-          "description": "Basic employee directory used for NL2SQL demo requests.",
+          "description": "Employee roster with salary and department assignments.",
           "columns": [
-            {"name": "id", "type": "INTEGER", "description": "Primary key identifier"},
+            {"name": "id", "type": "INTEGER", "description": "Primary key"},
             {"name": "name", "type": "TEXT", "description": "Full name"},
-            {"name": "age", "type": "INTEGER", "description": "Employee age in years"},
-            {"name": "department", "type": "TEXT", "description": "Department name"},
-            {"name": "department_id", "type": "INTEGER", "description": "Foreign key to departments table"},
+            {"name": "age", "type": "INTEGER", "description": "Employee age"},
+            {"name": "department", "type": "TEXT", "description": "Department label"},
+            {"name": "department_id", "type": "INTEGER", "description": "Foreign key to departments"},
             {"name": "role", "type": "TEXT", "description": "Job title"},
-            {"name": "salary", "type": "INTEGER", "description": "Annual salary in USD"}
+            {"name": "salary", "type": "INTEGER", "description": "Annual salary USD"}
           ],
           "primary_key": "id",
           "sample_values": {
             "department": ["Sales", "Engineering", "HR", "Finance"],
-            "role": ["Sales Manager", "Sales Associate", "Engineer", "Analyst"]
+            "role": ["Sales Manager", "Backend Engineer", "HR Business Partner"]
           }
         },
         {
           "name": "departments",
-          "description": "Department dimension table for join demos.",
+          "description": "Normalized departments with divisions.",
           "columns": [
-            {"name": "id", "type": "INTEGER", "description": "Primary key identifier"},
-            {"name": "name", "type": "TEXT", "description": "Department name"},
-            {"name": "division", "type": "TEXT", "description": "Business division"}
+            {"name": "id", "type": "INTEGER"},
+            {"name": "name", "type": "TEXT"},
+            {"name": "division", "type": "TEXT"}
           ],
           "primary_key": "id",
           "sample_values": {
             "division": ["Enterprise", "Product", "Corporate"]
           }
+        },
+        {
+          "name": "projects",
+          "description": "Project portfolio per department.",
+          "columns": [
+            {"name": "id", "type": "INTEGER"},
+            {"name": "name", "type": "TEXT"},
+            {"name": "department_id", "type": "INTEGER"},
+            {"name": "budget", "type": "INTEGER"}
+          ],
+          "primary_key": "id"
+        },
+        {
+          "name": "employee_projects",
+          "description": "Bridge table assigning employees to projects.",
+          "columns": [
+            {"name": "project_id", "type": "INTEGER"},
+            {"name": "employee_id", "type": "INTEGER"}
+          ]
+        },
+        {
+          "name": "sales",
+          "description": "Closed deals attributed to employees.",
+          "columns": [
+            {"name": "id", "type": "INTEGER"},
+            {"name": "employee_id", "type": "INTEGER"},
+            {"name": "client", "type": "TEXT"},
+            {"name": "amount", "type": "INTEGER"},
+            {"name": "quarter", "type": "TEXT"}
+          ],
+          "primary_key": "id",
+          "sample_values": {
+            "quarter": ["2024-Q1", "2024-Q2", "2024-Q3"]
+          }
         }
       ],
       "foreign_keys": [
+        {"source_table": "employees", "source_column": "department_id", "target_table": "departments", "target_column": "id"},
+        {"source_table": "projects", "source_column": "department_id", "target_table": "departments", "target_column": "id"},
+        {"source_table": "employee_projects", "source_column": "project_id", "target_table": "projects", "target_column": "id"},
+        {"source_table": "employee_projects", "source_column": "employee_id", "target_table": "employees", "target_column": "id"},
+        {"source_table": "sales", "source_column": "employee_id", "target_table": "employees", "target_column": "id"}
+      ]
+    },
+    {
+      "name": "university",
+      "path": "data/university.db",
+      "tables": [
         {
-          "source_table": "employees",
-          "source_column": "department_id",
-          "target_table": "departments",
-          "target_column": "id"
+          "name": "students",
+          "description": "Student directory with majors and class year.",
+          "columns": [
+            {"name": "id", "type": "INTEGER"},
+            {"name": "name", "type": "TEXT"},
+            {"name": "major", "type": "TEXT"},
+            {"name": "year", "type": "TEXT"}
+          ],
+          "primary_key": "id"
+        },
+        {
+          "name": "courses",
+          "description": "Course catalog entries with credits.",
+          "columns": [
+            {"name": "id", "type": "INTEGER"},
+            {"name": "title", "type": "TEXT"},
+            {"name": "department", "type": "TEXT"},
+            {"name": "credits", "type": "INTEGER"}
+          ],
+          "primary_key": "id"
+        },
+        {
+          "name": "enrollments",
+          "description": "Grades students earned in courses.",
+          "columns": [
+            {"name": "student_id", "type": "INTEGER"},
+            {"name": "course_id", "type": "INTEGER"},
+            {"name": "grade", "type": "TEXT"}
+          ]
         }
+      ],
+      "foreign_keys": [
+        {"source_table": "enrollments", "source_column": "student_id", "target_table": "students", "target_column": "id"},
+        {"source_table": "enrollments", "source_column": "course_id", "target_table": "courses", "target_column": "id"}
+      ]
+    },
+    {
+      "name": "retail",
+      "path": "data/retail.db",
+      "tables": [
+        {
+          "name": "products",
+          "description": "Product catalog with categories and pricing.",
+          "columns": [
+            {"name": "id", "type": "INTEGER"},
+            {"name": "name", "type": "TEXT"},
+            {"name": "category", "type": "TEXT"},
+            {"name": "price", "type": "INTEGER"}
+          ],
+          "primary_key": "id"
+        },
+        {
+          "name": "orders",
+          "description": "Customer orders and fulfillment status.",
+          "columns": [
+            {"name": "id", "type": "INTEGER"},
+            {"name": "customer", "type": "TEXT"},
+            {"name": "order_date", "type": "TEXT"},
+            {"name": "status", "type": "TEXT"}
+          ],
+          "primary_key": "id"
+        },
+        {
+          "name": "order_items",
+          "description": "Line items per order referencing products.",
+          "columns": [
+            {"name": "order_id", "type": "INTEGER"},
+            {"name": "product_id", "type": "INTEGER"},
+            {"name": "quantity", "type": "INTEGER"},
+            {"name": "unit_price", "type": "INTEGER"}
+          ]
+        }
+      ],
+      "foreign_keys": [
+        {"source_table": "order_items", "source_column": "order_id", "target_table": "orders", "target_column": "id"},
+        {"source_table": "order_items", "source_column": "product_id", "target_table": "products", "target_column": "id"}
       ]
     }
   ]

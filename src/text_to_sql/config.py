@@ -15,7 +15,7 @@ class ModelConfig:
 @dataclass
 class SchemaConfig:
     schema_path: Path = Path("data/sample_schema.json")
-    default_db_path: Path = Path("data/sample.db")
+    default_db_path: Path = Path("data/company.db")
     max_tables: int = 6
     max_columns_per_table: int = 16
     include_sample_values: bool = True
@@ -31,4 +31,5 @@ class PipelineConfig:
     stop_tokens: List[str] = field(default_factory=lambda: ["<pad>", "</s>"])
     include_relations_in_prompt: bool = True
     max_relation_paths: int = 3
+    verbose: bool = True
 

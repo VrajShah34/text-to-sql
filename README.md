@@ -10,6 +10,7 @@ End-to-end natural language -> SQL pipeline aligned to the requested methodology
 
 - Multi-table schema serialization with relation hints (foreign keys) and optional aggregation cues to help joins/subqueries.
 - Execution-guided candidate reranking plus deterministic heuristics for common HR-style prompts.
+- Demo SQLite database now covers `departments`, `employees`, `projects`, `employee_projects`, and `sales`, so you can test joins/many-to-many relationships locally.
 - Spider dataset utility script to convert the official `tables.json` into this pipeline's schema format.
 - CLI switches for swapping schema/model/device at runtime (`--schema-path`, `--model-name`, `--device`).
 
@@ -98,3 +99,31 @@ Query Result
 - Override the model at runtime with `--model-name Salesforce/codet5p-770m-py` (or any other HF checkpoint).
 - Tune schema serialization knobs (table/column caps, relation hints, aggregation cues) via `src/text_to_sql/config.py`.
 - Plug the `NL2SQLPipeline` class into an API or chat interface for interactive agents.
+
+## Join Example
+
+The enriched sample schema supports multi-table questions. For instance:
+
+- **NL Query:** “Which client deals closed in 2024-Q3 and what division handled them?”
+- **Generated SQL:**
+
+```
+SELECT s.client,
+       d.name AS department,
+       d.division,
+       e.name AS employee
+FROM sales AS s
+JOIN employees AS e ON s.employee_id = e.id
+JOIN departments AS d ON e.department_id = d.id
+WHERE s.quarter = '2024-Q3';
+```
+
+Result (based on the seeded data):
+
+```
+| client | department | division    | employee     |
+|--------|------------|-------------|--------------|
+| Globex | Sales      | Enterprise  | Olivia Green |
+```
+
+Similar prompts can traverse `employee_projects -> projects -> departments` to reason over many-to-many relationships.
