@@ -5,7 +5,7 @@ from typing import List, Optional
 
 @dataclass
 class ModelConfig:
-    model_name: str = "tscholak/lego-base"
+    model_name: str = "gaussalgo/T5-LM-Large-text2sql-spider"
     max_input_tokens: int = 512
     max_output_tokens: int = 196
     num_beams: int = 6

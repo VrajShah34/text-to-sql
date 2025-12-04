@@ -1,12 +1,17 @@
 # Text-to-SQL Demo
 
-End-to-end natural language → SQL pipeline that follows the requested methodology:
+End-to-end natural language -> SQL pipeline aligned to the requested methodology:
 
-1. **Input & Preprocessing** – Tokenizes the user question with a pretrained tokenizer, links schema terms, and builds a structured prompt.
-2. **Model Core & Constrained Decoding** – Uses a T5-family model (`mrm8488/t5-base-finetuned-wikiSQL`) to autoregressively decode SQL with beam search.
-3. **Postprocessing & Execution** – Validates, formats, and executes the generated SQL against SQLite, returning tabular results.
+1. **Input & Preprocessing** – Tokenizes the NL question with a pretrained tokenizer, performs schema linking/augmentation (column sampling, FK graph), and emits a constrained prompt.
+2. **Model Core & Constrained Decoding** – Uses a Spider-tuned T5 checkpoint (`gaussalgo/T5-LM-Large-text2sql-spider` by default) with beam search plus execution-guided filtering.
+3. **Postprocessing & Execution** – Sanitizes/validates SQL (tables, clauses, read-only guard), formats it, and executes against SQLite with results rendered in Rich tables.
 
-The demo ships with a `company` database containing an `employees` table populated via `scripts/bootstrap_db.py`. It can be swapped with richer databases (e.g., WikiSQL tables).
+## Highlights
+
+- Multi-table schema serialization with relation hints (foreign keys) and optional aggregation cues to help joins/subqueries.
+- Execution-guided candidate reranking plus deterministic heuristics for common HR-style prompts.
+- Spider dataset utility script to convert the official `tables.json` into this pipeline's schema format.
+- CLI switches for swapping schema/model/device at runtime (`--schema-path`, `--model-name`, `--device`).
 
 ## Project Structure
 
@@ -18,7 +23,8 @@ The demo ships with a `company` database containing an `employees` table populat
 │   └── sample_schema.json      # Schema metadata
 ├── requirements.txt
 ├── scripts/
-│   └── bootstrap_db.py         # Seeds the demo database
+│   ├── bootstrap_db.py         # Seeds the demo database (employees + departments)
+│   └── import_spider_schema.py # Converts Spider tables.json to schema JSON
 └── src/text_to_sql/
     ├── __init__.py
     ├── config.py               # Config dataclasses
@@ -31,8 +37,8 @@ The demo ships with a `company` database containing an `employees` table populat
 
 ## Datasets
 
-- **WikiSQL** – ~80k NL/SQL pairs across 700 tables; ideal for baseline models.
-- **Spider** (page 6/17 excerpt) – ~10k questions spanning 200 DBs with complex SQL (joins, aggregations, subqueries). The provided pipeline can fine-tune on these datasets using Hugging Face `datasets` if desired.
+- **Spider** – ~10k questions spanning 200 DBs with heavy joins/aggregations/subqueries. The default model (`tscholak/lego-base`) is Spider-tuned, and the repo ships with `scripts/import_spider_schema.py` to ingest `tables.json`.
+- **WikiSQL** – ~80k simpler single-table queries. Swap in a WikiSQL-tuned checkpoint via `--model-name` if your workload is simpler.
 
 ## Setup
 
@@ -41,6 +47,21 @@ python -m venv .venv
 . .venv/Scripts/activate    # PS> .venv\Scripts\Activate.ps1 on Windows
 pip install -r requirements.txt
 python scripts/bootstrap_db.py    # creates data/sample.db with demo rows
+```
+
+### Optional: ingest Spider databases
+
+```bash
+# Assuming Spider lives in ../spider with tables.json + database/* directories
+python scripts/import_spider_schema.py ^
+  --tables-json ..\spider\tables.json ^
+  --database-dir ..\spider\database ^
+  --output data\spider_schema.json
+
+# Run against a Spider DB (e.g., academic.sqlite) with the bundled model
+python app.py --question "How many authors have more than 3 papers?" ^
+  --schema academic ^
+  --schema-path data\spider_schema.json
 ```
 
 ## Usage
@@ -53,7 +74,7 @@ Example output:
 
 ```
 ╭─────────────────────────────────────╮
-│            NL → SQL Result          │
+│            NL -> SQL Result         │
 ╰─────────────────────────────────────╯
 SQL
 SELECT
@@ -74,5 +95,6 @@ Query Result
 ## Extending
 
 - Swap `data/sample_schema.json` with schemas extracted from WikiSQL/Spider.
-- Fine-tune or replace the model in `src/text_to_sql/config.py`.
+- Override the model at runtime with `--model-name Salesforce/codet5p-770m-py` (or any other HF checkpoint).
+- Tune schema serialization knobs (table/column caps, relation hints, aggregation cues) via `src/text_to_sql/config.py`.
 - Plug the `NL2SQLPipeline` class into an API or chat interface for interactive agents.
