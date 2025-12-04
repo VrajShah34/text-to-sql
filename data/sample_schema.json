@@ -1,0 +1,50 @@
+{
+  "databases": [
+    {
+      "name": "company",
+      "path": "data/sample.db",
+      "tables": [
+        {
+          "name": "employees",
+          "description": "Basic employee directory used for NL2SQL demo requests.",
+          "columns": [
+            {"name": "id", "type": "INTEGER", "description": "Primary key identifier"},
+            {"name": "name", "type": "TEXT", "description": "Full name"},
+            {"name": "age", "type": "INTEGER", "description": "Employee age in years"},
+            {"name": "department", "type": "TEXT", "description": "Department name"},
+            {"name": "department_id", "type": "INTEGER", "description": "Foreign key to departments table"},
+            {"name": "role", "type": "TEXT", "description": "Job title"},
+            {"name": "salary", "type": "INTEGER", "description": "Annual salary in USD"}
+          ],
+          "primary_key": "id",
+          "sample_values": {
+            "department": ["Sales", "Engineering", "HR", "Finance"],
+            "role": ["Sales Manager", "Sales Associate", "Engineer", "Analyst"]
+          }
+        },
+        {
+          "name": "departments",
+          "description": "Department dimension table for join demos.",
+          "columns": [
+            {"name": "id", "type": "INTEGER", "description": "Primary key identifier"},
+            {"name": "name", "type": "TEXT", "description": "Department name"},
+            {"name": "division", "type": "TEXT", "description": "Business division"}
+          ],
+          "primary_key": "id",
+          "sample_values": {
+            "division": ["Enterprise", "Product", "Corporate"]
+          }
+        }
+      ],
+      "foreign_keys": [
+        {
+          "source_table": "employees",
+          "source_column": "department_id",
+          "target_table": "departments",
+          "target_column": "id"
+        }
+      ]
+    }
+  ]
+}
+
