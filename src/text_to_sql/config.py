@@ -29,4 +29,6 @@ class PipelineConfig:
     enable_execution_guidance: bool = True
     top_k: int = 3
     stop_tokens: List[str] = field(default_factory=lambda: ["<pad>", "</s>"])
+    include_relations_in_prompt: bool = True
+    max_relation_paths: int = 3
 
