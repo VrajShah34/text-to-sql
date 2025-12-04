@@ -7,26 +7,12 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from src.text_to_sql.config import PipelineConfig
-from src.text_to_sql.pipeline import NL2SQLPipeline
+# 🔹 New: import from the LLM+SQLite backend instead of old pipeline
+from backend_llm import run_llm_sql_pipeline, SCHEMA_CHOICES, GEMINI_INIT_ERROR
 
 app = FastAPI(title="Text-to-SQL Dashboard")
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Instantiate pipeline once with quiet logging for the dashboard UI
-web_config = PipelineConfig()
-web_config.verbose = False
-pipeline = NL2SQLPipeline(web_config)
-SCHEMA_CHOICES: List[str] = [schema.name for schema in pipeline.schemas]
-
-
-def _run_pipeline(question: str, schema_name: Optional[str]):
-    output = pipeline.run(question=question, schema_name=schema_name or None)
-    result_rows = output.result.rows if output.result else []
-    result_columns = output.result.columns if output.result else []
-    error = output.validation_error
-    return output.sql, result_columns, result_rows, error
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -41,7 +27,7 @@ async def index(request: Request):
             "sql_text": "",
             "columns": [],
             "rows": [],
-            "error": "",
+            "error": GEMINI_INIT_ERROR,  # show init error (e.g., missing API key)
         },
     )
 
@@ -61,7 +47,8 @@ async def query(
     if not question:
         error = "Please enter a natural-language question."
     else:
-        sql_text, columns, rows, err = _run_pipeline(question, schema_name)
+        # 🔹 New: call our LLM+SQLite backend instead of the old pipeline
+        sql_text, columns, rows, err = run_llm_sql_pipeline(question, schema_name)
         if err:
             error = err
 
@@ -78,4 +65,3 @@ async def query(
             "error": error,
         },
     )
-
